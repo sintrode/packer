@@ -5,7 +5,7 @@
 ::
 :: Requires certutil.
 ::
-:: Taken from http://www.dostips.com/forum/viewtopic.php?t=1977#p8751
+:: Inspired by http://www.dostips.com/forum/viewtopic.php?t=1977#p8751
 ::------------------------------------------------------------------------------
 @echo off
 setlocal enabledelayedexpansion
