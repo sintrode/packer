@@ -85,6 +85,7 @@ del "%~dp1\setup.inf"
 	echo del "%%~n0.cab"
 )
 certutil -encode "%target_file%" "%target_file%.b64"
+del "%target_file%"
 >>"%~n1_setup.bat" (
 	echo exit /b
 	type "%target_file%.b64"
