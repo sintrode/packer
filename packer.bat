@@ -128,5 +128,5 @@ set "output_file="
 		del "base64_%%~nxA"
 	)
 )
-del "%~n1*.cab"
+del /q "%~n1*.cab"
 exit /b
