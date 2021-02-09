@@ -18,8 +18,11 @@
 ::     File size limit fix from https://ss64.com/nt/makecab-directives.html
 ::
 :: VERSION HISTORY
-::     1.1 (2021-02-04) - Removed file size limitations (up to makecab's
-::                        makecab's default 2GB filesize)
+::     1.2 (2021-02-08) - Increased folder size limit to 2,147,450,880 bytes
+::                      - Added support for exclamation points in file names
+::                      - Corrected version history
+::     1.1 (2021-02-04) - Removed file size limitations (up to certutil's
+::                        default 74,472,684 byte filesize)
 ::                      - Fixed support for subfolders
 ::     1.0 (2018-03-18) - Initial Version
 ::------------------------------------------------------------------------------
@@ -29,6 +32,9 @@ setlocal enabledelayedexpansion
 :: If no folder was provided, exit immediately
 if "%~1"=="" exit /b
 if not exist "%~1\" exit /b
+
+:: Check that the input direcotry is 74472684 bytes or smaller
+set "max_cab_size=74472448"
 
 set "config_file=%~dp0\directives.ddf"
 set "target_file=%~dp0\%~n1.cab"
@@ -40,15 +46,12 @@ pushd "%~1"
 	echo .Option Explicit
 	echo .Set SourceDir="%~1"
 	echo .Set DiskDirectoryTemplate="%~dp0"
-	echo .Set CabinetNameTemplate="%~n1.cab"
+	echo .Set CabinetNameTemplate="%~n1*.cab"
 	echo .Set Cabinet=ON
 	echo .Set Compress=ON
 	echo .Set CompressionType=MSZIP
 	echo .Set DestinationDir="%~n1"
-	echo .Set FolderSizeThreshold=0
-	echo .Set MaxCabinetSize=0
-	echo .Set MaxDiskFileCount=0
-	echo .Set MaxDiskSize=0
+	echo .Set MaxDiskSize=%max_cab_size%
 )
 
 :: Add the list of files to the cabinet config file
@@ -77,17 +80,53 @@ del "%~dp1\setup.rpt"
 del "%~dp1\setup.inf"
 
 :: Generate the extraction script
+set "output_file="
 >>"%~n1_setup.bat" (
 	echo @echo off
-	echo certutil -decode "%%~0" "%%~n0.cab"
-	echo mkdir "%%~n0" 2^>nul
-	echo expand "%%~n0.cab" -f:* "%%~n0"
-	echo del "%%~n0.cab"
-)
-certutil -encode "%target_file%" "%target_file%.b64"
-del "%target_file%"
->>"%~n1_setup.bat" (
+	echo setlocal enabledelayedexpansion
+	echo set "output_dir=%%~n0"
+	echo mkdir "%%output_dir%%"
+	echo set "output_file="
+	echo set "input_file=%%~nx0"
+	echo for /f "usebackq skip=35 tokens=1,2 delims=:" %%%%A in ("%%input_file%%"^) do (
+	echo 	if not "%%%%~B"=="" (
+	echo 		if defined output_file call :Base64Process "^!output_file^!"
+	echo 		endlocal
+	echo 		call :sanitizeFilename "%%%%~A"
+	echo 		setlocal enabledelayedexpansion
+	echo 		pushd "%%output_dir%%"
+	echo 		echo Processing ^^!output_file^^!
+	echo 		^>^>"^!output_file^!" echo %%%%~B
+	echo 	^) else (
+	echo 		^>^>"^!output_file^!" echo %%%%~A
+	echo 	^)
+	echo ^)
+	echo call :Base64Process "^!output_file^!"
+	echo extrac32 /a /e "%~n11.cab"
+	echo del "%~n1*.cab"
+	echo popd
 	echo exit /b
-	type "%target_file%.b64"
+	echo :sanitizeFilename
+	echo set "filename=%%~1"
+	echo set "filename=%%filename:^!=%%"
+	echo set "output_file=%%filename%%"
+	echo exit /b
+	echo :Base64Process
+	echo set "b64_filename=%%~1"
+	echo set "reg_filename=%%b64_filename:~7%%"
+	echo ^>nul certutil -decode "%%b64_filename%%" "%%reg_filename%%"
+	echo del "%%b64_filename%%"
+	echo exit /b
 )
-del "%target_file%.b64"
+
+:: Convert all cabinet files to base64 and generate the m64 file
+>>"%~n1_setup.bat" (
+	for %%A in (%~n1*.cab) do (
+		>nul certutil -encode "%%~A" "base64_%%~nxA"
+		<nul set /p "=base64_%%~nxA:"
+		type "base64_%%~nxA"
+		del "base64_%%~nxA"
+	)
+)
+del "%~n1*.cab"
+exit /b
