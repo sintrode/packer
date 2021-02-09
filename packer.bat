@@ -16,15 +16,6 @@
 :: THANKS
 ::     Inspired by http://www.dostips.com/forum/viewtopic.php?t=1977#p8751
 ::     File size limit fix from https://ss64.com/nt/makecab-directives.html
-::
-:: VERSION HISTORY
-::     1.2 (2021-02-08) - Increased folder size limit to 2,147,450,880 bytes
-::                      - Added support for exclamation points in file names
-::                      - Corrected version history
-::     1.1 (2021-02-04) - Removed file size limitations (up to certutil's
-::                        default 74,472,684 byte filesize)
-::                      - Fixed support for subfolders
-::     1.0 (2018-03-18) - Initial Version
 ::------------------------------------------------------------------------------
 @echo off
 setlocal enabledelayedexpansion
@@ -121,7 +112,7 @@ set "output_file="
 
 :: Convert all cabinet files to base64 and generate the m64 file
 >>"%~n1_setup.bat" (
-	for %%A in (%~n1*.cab) do (
+	for /f "delims=" %%A in ('dir /b "%~n1*.cab"') do (
 		>nul certutil -encode "%%~A" "base64_%%~nxA"
 		<nul set /p "=base64_%%~nxA:"
 		type "base64_%%~nxA"
