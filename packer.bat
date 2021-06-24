@@ -24,7 +24,7 @@ setlocal enabledelayedexpansion
 if "%~1"=="" exit /b
 if not exist "%~1\" exit /b
 
-:: Check that the input direcotry is 74472684 bytes or smaller
+:: Check that the input directory is 74472684 bytes or smaller
 set "max_cab_size=74472448"
 
 set "config_file=%~dp0\directives.ddf"
