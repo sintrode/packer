@@ -19,6 +19,7 @@
 ::------------------------------------------------------------------------------
 @echo off
 setlocal enabledelayedexpansion
+chcp 1252 >nul
 
 :: If no folder was provided, exit immediately
 if "%~1"=="" exit /b
@@ -48,7 +49,7 @@ pushd "%~1"
 :: Add the list of files to the cabinet config file
 echo(Processing all files in %cd%
 for /f "delims=" %%A in ('dir /a:-d /b') do (
-	>>%config_file% echo "%%A"
+	>>"%config_file%" echo "%%A"
 )
 
 :: Add the subdirectories and all related files to the cabinet config file
@@ -56,16 +57,18 @@ for /f "delims=" %%A in ('dir /a:d /b /s') do (
 	set "inner_target=%%A"
 	set "inner_target=%~n1\!inner_target:*%~1\=!"
 	echo(Processing all files in !inner_target!
-	>>%config_file% echo .Set SourceDir="%%A"
-	>>%config_file% echo .Set DestinationDir="!inner_target!"
-	for /f "delims=" %%B in ('dir /a:-d /b "%%A"') do (
-		>>%config_file% echo "%%B"
+	>>"%config_file%" (
+		echo .Set SourceDir="%%A"
+		echo .Set DestinationDir="!inner_target!"
+		for /f "delims=" %%B in ('dir /a:-d /b "%%A"') do (
+			echo "%%B"
+		)
 	)
 )
 popd
 
 :: Generate the cabinet file
-makecab /f %config_file%
+makecab /f "%config_file%"
 del "%~dp0\directives.ddf"
 del "%~dp1\setup.rpt"
 del "%~dp1\setup.inf"
