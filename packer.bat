@@ -2,8 +2,9 @@
 :: NAME
 ::     packer.bat
 ::
-:: AUTHOR
+:: AUTHORS
 ::     sintrode
+::     Grub4K
 ::
 :: DESCRIPTION
 ::     Generates a cabinet file from a provided folder that contains all other
